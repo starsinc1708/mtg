@@ -21,6 +21,7 @@ type prometheusProcessor struct {
 func (p prometheusProcessor) EventStart(evt mtglib.EventStart) {
 	info := acquireStreamInfo()
 	info.startedAt = time.Now()
+	info.tags[TagClientIP] = evt.RemoteIP.String()
 
 	if evt.RemoteIP.To4() != nil {
 		info.tags[TagIPFamily] = TagIPFamilyIPv4
@@ -32,6 +33,9 @@ func (p prometheusProcessor) EventStart(evt mtglib.EventStart) {
 
 	p.factory.metricClientConnections.
 		WithLabelValues(info.tags[TagIPFamily]).
+		Inc()
+	p.factory.metricClientConnectionsByIP.
+		WithLabelValues(info.tags[TagClientIP]).
 		Inc()
 }
 
@@ -104,6 +108,12 @@ func (p prometheusProcessor) EventFinish(evt mtglib.EventFinish) {
 	p.factory.metricClientConnections.
 		WithLabelValues(info.tags[TagIPFamily]).
 		Dec()
+
+	if clientIP, ok := info.tags[TagClientIP]; ok {
+		p.factory.metricClientConnectionsByIP.
+			WithLabelValues(clientIP).
+			Dec()
+	}
 
 	if info.isDomainFronted {
 		p.factory.metricDomainFrontingConnections.
@@ -183,6 +193,8 @@ type PrometheusFactory struct {
 	metricTelegramTraffic       *prometheus.CounterVec
 	metricDomainFrontingTraffic *prometheus.CounterVec
 	metricIPBlocklisted         *prometheus.CounterVec
+
+	metricClientConnectionsByIP *prometheus.GaugeVec
 
 	metricDomainFronting       prometheus.Counter
 	metricDomainFrontingByIP   *prometheus.CounterVec
@@ -266,6 +278,12 @@ func NewPrometheus(metricPrefix, httpPath string) *PrometheusFactory { //nolint:
 			Help:      "A number of rejected sessions due to ip blocklisting.",
 		}, []string{TagIPList}),
 
+		metricClientConnectionsByIP: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: metricPrefix,
+			Name:      MetricClientConnectionsByIP,
+			Help:      "A number of active client connections grouped by client IP.",
+		}, []string{TagClientIP}),
+
 		metricDomainFronting: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: metricPrefix,
 			Name:      MetricDomainFronting,
@@ -318,6 +336,7 @@ func NewPrometheus(metricPrefix, httpPath string) *PrometheusFactory { //nolint:
 	registry.MustRegister(factory.metricDomainFrontingTraffic)
 	registry.MustRegister(factory.metricIPBlocklisted)
 
+	registry.MustRegister(factory.metricClientConnectionsByIP)
 	registry.MustRegister(factory.metricDomainFronting)
 	registry.MustRegister(factory.metricDomainFrontingByIP)
 	registry.MustRegister(factory.metricIPBlocklistedByIP)

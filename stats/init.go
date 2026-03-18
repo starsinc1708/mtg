@@ -157,6 +157,14 @@ const (
 	//     Type: histogram
 	MetricConnectionDuration = "connection_duration_seconds"
 
+	// MetricClientConnectionsByIP defines a gauge of active client
+	// connections grouped by client IP address.
+	//
+	//     Type: gauge
+	//     Tags:
+	//       client_ip | IP address of the client.
+	MetricClientConnectionsByIP = "client_connections_by_ip"
+
 	// MetricKnownClientPings defines a metric for pings from previously
 	// authenticated clients (e.g. Telegram app latency checks).
 	//

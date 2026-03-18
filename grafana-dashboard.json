@@ -724,7 +724,43 @@
       "targets": [
         { "expr": "topk(20, sum by (client_ip) (mtg_known_client_pings_by_ip))", "legendFormat": "", "refId": "A", "instant": true, "format": "table" }
       ],
-      "title": "Known Clients (authenticated users)",
+      "title": "Known Clients (authenticated users) — pings",
+      "type": "table",
+      "transformations": [
+        { "id": "organize", "options": { "excludeByName": { "Time": true }, "renameByName": {} } }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Все активные клиентские подключения сгруппированные по IP. Показывает сколько соединений у каждого пользователя прямо сейчас",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "inspect": false },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null },
+            { "color": "yellow", "value": 10 },
+            { "color": "red", "value": 50 }
+          ]}
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Value" }, "properties": [
+            { "id": "displayName", "value": "Connections" },
+            { "id": "custom.cellOptions", "value": { "mode": "gradient", "type": "gauge" } }
+          ]},
+          { "matcher": { "id": "byName", "options": "client_ip" }, "properties": [
+            { "id": "displayName", "value": "Client IP" }
+          ]}
+        ]
+      },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 79 },
+      "id": 53,
+      "options": { "showHeader": true, "sortBy": [{ "desc": true, "displayName": "Connections" }] },
+      "targets": [
+        { "expr": "topk(50, sum by (client_ip) (mtg_client_connections_by_ip > 0))", "legendFormat": "", "refId": "A", "instant": true, "format": "table" }
+      ],
+      "title": "Active Connections by IP",
       "type": "table",
       "transformations": [
         { "id": "organize", "options": { "excludeByName": { "Time": true }, "renameByName": {} } }
