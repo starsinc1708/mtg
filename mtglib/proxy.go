@@ -269,7 +269,7 @@ func (p *Proxy) doTelegramCall(ctx *streamContext) error {
 }
 
 func (p *Proxy) doDomainFronting(ctx *streamContext, conn *connRewind) {
-	p.eventStream.Send(p.ctx, NewEventDomainFronting(ctx.streamID))
+	p.eventStream.Send(p.ctx, NewEventDomainFronting(ctx.streamID, ctx.ClientIP()))
 	conn.Rewind()
 
 	nativeDialer := p.network.NativeDialer()

@@ -105,7 +105,7 @@ func (suite *PrometheusTestSuite) TestDomainFrontingPath() {
 	suite.NoError(err)
 	suite.Contains(data, `mtg_client_connections{ip_family="ipv4"} 1`)
 
-	suite.prometheus.EventDomainFronting(mtglib.NewEventDomainFronting("connID"))
+	suite.prometheus.EventDomainFronting(mtglib.NewEventDomainFronting("connID", net.ParseIP("1.2.3.4")))
 	time.Sleep(100 * time.Millisecond)
 
 	data, err = suite.Get()

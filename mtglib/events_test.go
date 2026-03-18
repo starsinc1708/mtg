@@ -42,7 +42,7 @@ func (suite *EventsTestSuite) TestEventTraffic() {
 }
 
 func (suite *EventsTestSuite) TestEventDomainFronting() {
-	evt := mtglib.NewEventDomainFronting("CONNID")
+	evt := mtglib.NewEventDomainFronting("CONNID", net.ParseIP("1.2.3.4"))
 
 	suite.Equal("CONNID", evt.StreamID())
 	suite.WithinDuration(time.Now(), evt.Timestamp(), 10*time.Millisecond)

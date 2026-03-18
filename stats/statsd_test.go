@@ -145,7 +145,7 @@ func (suite *StatsdTestSuite) TestDomainFrontingPath() {
 	time.Sleep(statsdSleepTime)
 	suite.Equal("mtg.client_connections:+1|g|#ip_family:ipv4", suite.statsdServer.String())
 
-	suite.statsd.EventDomainFronting(mtglib.NewEventDomainFronting("connID"))
+	suite.statsd.EventDomainFronting(mtglib.NewEventDomainFronting("connID", net.ParseIP("1.2.3.4")))
 	time.Sleep(statsdSleepTime)
 	suite.Contains(suite.statsdServer.String(), "mtg.domain_fronting:1|c")
 	suite.Contains(suite.statsdServer.String(),

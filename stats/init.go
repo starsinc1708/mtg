@@ -130,4 +130,15 @@ const (
 
 	// TagIPListBlock defines a value of 'ip_list' of blocklist.
 	TagIPListBlock = "blocklist"
+
+	// MetricDomainFrontingByIP defines a metric for domain fronting
+	// events grouped by client IP address.
+	//
+	//     Type: counter
+	//     Tags:
+	//       client_ip | IP address of the client.
+	MetricDomainFrontingByIP = "domain_fronting_by_ip"
+
+	// TagClientIP defines a name of the 'client_ip' tag.
+	TagClientIP = "client_ip"
 )

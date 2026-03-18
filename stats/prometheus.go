@@ -56,6 +56,9 @@ func (p prometheusProcessor) EventDomainFronting(evt mtglib.EventDomainFronting)
 	info.isDomainFronted = true
 
 	p.factory.metricDomainFronting.Inc()
+	p.factory.metricDomainFrontingByIP.
+		WithLabelValues(evt.RemoteIP.String()).
+		Inc()
 	p.factory.metricDomainFrontingConnections.
 		WithLabelValues(info.tags[TagIPFamily]).
 		Inc()
@@ -156,7 +159,8 @@ type PrometheusFactory struct {
 	metricDomainFrontingTraffic *prometheus.CounterVec
 	metricIPBlocklisted         *prometheus.CounterVec
 
-	metricDomainFronting     prometheus.Counter
+	metricDomainFronting       prometheus.Counter
+	metricDomainFrontingByIP *prometheus.CounterVec
 	metricConcurrencyLimited prometheus.Counter
 	metricReplayAttacks      prometheus.Counter
 }
@@ -238,6 +242,11 @@ func NewPrometheus(metricPrefix, httpPath string) *PrometheusFactory { //nolint:
 			Name:      MetricDomainFronting,
 			Help:      "A number of routings to front domain.",
 		}),
+		metricDomainFrontingByIP: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: metricPrefix,
+			Name:      MetricDomainFrontingByIP,
+			Help:      "A number of domain fronting events grouped by client IP.",
+		}, []string{TagClientIP}),
 		metricConcurrencyLimited: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: metricPrefix,
 			Name:      MetricConcurrencyLimited,
@@ -260,6 +269,7 @@ func NewPrometheus(metricPrefix, httpPath string) *PrometheusFactory { //nolint:
 	registry.MustRegister(factory.metricIPBlocklisted)
 
 	registry.MustRegister(factory.metricDomainFronting)
+	registry.MustRegister(factory.metricDomainFrontingByIP)
 	registry.MustRegister(factory.metricConcurrencyLimited)
 	registry.MustRegister(factory.metricReplayAttacks)
 

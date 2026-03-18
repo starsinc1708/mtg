@@ -70,6 +70,8 @@ type EventFinish struct {
 // Telegram server.
 type EventDomainFronting struct {
 	eventBase
+
+	RemoteIP net.IP
 }
 
 // EventConcurrencyLimited is emitted when connection was declined because of
@@ -148,12 +150,13 @@ func NewEventFinish(streamID string) EventFinish {
 }
 
 // NewEventDomainFronting creates a new EventDomainFronting event.
-func NewEventDomainFronting(streamID string) EventDomainFronting {
+func NewEventDomainFronting(streamID string, remoteIP net.IP) EventDomainFronting {
 	return EventDomainFronting{
 		eventBase: eventBase{
 			timestamp: time.Now(),
 			streamID:  streamID,
 		},
+		RemoteIP: remoteIP,
 	}
 }
 

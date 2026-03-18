@@ -21,7 +21,7 @@ func (suite *NoopTestSuite) SetupSuite() {
 	suite.testData = map[string]mtglib.Event{
 		"start":               mtglib.NewEventStart("connID", net.ParseIP("127.0.0.1")),
 		"connected-to-dc":     mtglib.NewEventConnectedToDC("connID", net.ParseIP("127.1.0.1"), 2),
-		"domain-fronting":     mtglib.NewEventDomainFronting("connID"),
+		"domain-fronting":     mtglib.NewEventDomainFronting("connID", net.ParseIP("1.2.3.4")),
 		"traffic":             mtglib.NewEventTraffic("connID", 1000, true),
 		"finish":              mtglib.NewEventFinish("connID"),
 		"concurrency-limited": mtglib.NewEventConcurrencyLimited(),

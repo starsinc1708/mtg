@@ -82,7 +82,7 @@ func (suite *EventStreamTestSuite) TestEventConnectedToDC() {
 }
 
 func (suite *EventStreamTestSuite) TestEventDomainFronting() {
-	evt := mtglib.NewEventDomainFronting("connID")
+	evt := mtglib.NewEventDomainFronting("connID", net.ParseIP("1.2.3.4"))
 
 	for _, v := range []*ObserverMock{suite.observerMock1, suite.observerMock2} {
 		v.
