@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/9seconds/mtg/v2/events"
 	"github.com/9seconds/mtg/v2/mtglib"
@@ -19,6 +20,7 @@ type prometheusProcessor struct {
 
 func (p prometheusProcessor) EventStart(evt mtglib.EventStart) {
 	info := acquireStreamInfo()
+	info.startedAt = time.Now()
 
 	if evt.RemoteIP.To4() != nil {
 		info.tags[TagIPFamily] = TagIPFamilyIPv4
@@ -94,6 +96,11 @@ func (p prometheusProcessor) EventFinish(evt mtglib.EventFinish) {
 		releaseStreamInfo(info)
 	}()
 
+	if !info.startedAt.IsZero() {
+		p.factory.metricConnectionDuration.
+			Observe(time.Since(info.startedAt).Seconds())
+	}
+
 	p.factory.metricClientConnections.
 		WithLabelValues(info.tags[TagIPFamily]).
 		Dec()
@@ -120,6 +127,7 @@ func (p prometheusProcessor) EventIPBlocklisted(evt mtglib.EventIPBlocklisted) {
 	}
 
 	p.factory.metricIPBlocklisted.WithLabelValues(tag).Inc()
+	p.factory.metricIPBlocklistedByIP.WithLabelValues(evt.RemoteIP.String(), tag).Inc()
 }
 
 func (p prometheusProcessor) EventReplayAttack(_ mtglib.EventReplayAttack) {
@@ -160,9 +168,11 @@ type PrometheusFactory struct {
 	metricIPBlocklisted         *prometheus.CounterVec
 
 	metricDomainFronting       prometheus.Counter
-	metricDomainFrontingByIP *prometheus.CounterVec
-	metricConcurrencyLimited prometheus.Counter
-	metricReplayAttacks      prometheus.Counter
+	metricDomainFrontingByIP   *prometheus.CounterVec
+	metricIPBlocklistedByIP    *prometheus.CounterVec
+	metricConnectionDuration   prometheus.Histogram
+	metricConcurrencyLimited   prometheus.Counter
+	metricReplayAttacks        prometheus.Counter
 }
 
 // Make builds a new observer.
@@ -247,6 +257,17 @@ func NewPrometheus(metricPrefix, httpPath string) *PrometheusFactory { //nolint:
 			Name:      MetricDomainFrontingByIP,
 			Help:      "A number of domain fronting events grouped by client IP.",
 		}, []string{TagClientIP}),
+		metricIPBlocklistedByIP: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: metricPrefix,
+			Name:      MetricIPBlocklistedByIP,
+			Help:      "A number of IP blocklist events grouped by client IP.",
+		}, []string{TagClientIP, TagIPList}),
+		metricConnectionDuration: prometheus.NewHistogram(prometheus.HistogramOpts{
+			Namespace: metricPrefix,
+			Name:      MetricConnectionDuration,
+			Help:      "Duration of client connections in seconds.",
+			Buckets:   []float64{1, 5, 15, 30, 60, 120, 300, 600, 1800, 3600},
+		}),
 		metricConcurrencyLimited: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: metricPrefix,
 			Name:      MetricConcurrencyLimited,
@@ -270,6 +291,8 @@ func NewPrometheus(metricPrefix, httpPath string) *PrometheusFactory { //nolint:
 
 	registry.MustRegister(factory.metricDomainFronting)
 	registry.MustRegister(factory.metricDomainFrontingByIP)
+	registry.MustRegister(factory.metricIPBlocklistedByIP)
+	registry.MustRegister(factory.metricConnectionDuration)
 	registry.MustRegister(factory.metricConcurrencyLimited)
 	registry.MustRegister(factory.metricReplayAttacks)
 

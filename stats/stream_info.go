@@ -1,9 +1,14 @@
 package stats
 
-import statsd "github.com/smira/go-statsd"
+import (
+	"time"
+
+	statsd "github.com/smira/go-statsd"
+)
 
 type streamInfo struct {
 	isDomainFronted bool
+	startedAt       time.Time
 	tags            map[string]string
 }
 
@@ -13,6 +18,7 @@ func (s streamInfo) T(key string) statsd.Tag {
 
 func (s *streamInfo) Reset() {
 	s.isDomainFronted = false
+	s.startedAt = time.Time{}
 
 	for k := range s.tags {
 		delete(s.tags, k)

@@ -141,4 +141,19 @@ const (
 
 	// TagClientIP defines a name of the 'client_ip' tag.
 	TagClientIP = "client_ip"
+
+	// MetricIPBlocklistedByIP defines a metric for IP blocklist events
+	// grouped by blocked client IP address.
+	//
+	//     Type: counter
+	//     Tags:
+	//       client_ip | IP address of the blocked client.
+	//       ip_list   | 'allowlist' or 'blocklist'
+	MetricIPBlocklistedByIP = "ip_blocklisted_by_ip"
+
+	// MetricConnectionDuration defines a histogram of client connection
+	// durations in seconds.
+	//
+	//     Type: histogram
+	MetricConnectionDuration = "connection_duration_seconds"
 )
