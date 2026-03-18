@@ -45,6 +45,10 @@ func (o *ObserverMock) EventIPListSize(evt mtglib.EventIPListSize) {
 	o.Called(evt)
 }
 
+func (o *ObserverMock) EventKnownClientPing(evt mtglib.EventKnownClientPing) {
+	o.Called(evt)
+}
+
 func (o *ObserverMock) Shutdown() {
 	o.Called()
 }

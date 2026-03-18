@@ -118,6 +118,18 @@ func (m multiObserver) EventIPListSize(evt mtglib.EventIPListSize) {
 	wg.Wait()
 }
 
+func (m multiObserver) EventKnownClientPing(evt mtglib.EventKnownClientPing) {
+	wg := &sync.WaitGroup{}
+
+	for _, v := range m.observers {
+		wg.Go(func() {
+			v.EventKnownClientPing(evt)
+		})
+	}
+
+	wg.Wait()
+}
+
 func (m multiObserver) Shutdown() {
 	for _, v := range m.observers {
 		v.Shutdown()

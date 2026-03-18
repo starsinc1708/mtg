@@ -134,6 +134,23 @@ func (p prometheusProcessor) EventReplayAttack(_ mtglib.EventReplayAttack) {
 	p.factory.metricReplayAttacks.Inc()
 }
 
+func (p prometheusProcessor) EventKnownClientPing(evt mtglib.EventKnownClientPing) {
+	info, ok := p.streams[evt.StreamID()]
+	if !ok {
+		return
+	}
+
+	info.isDomainFronted = true
+
+	p.factory.metricKnownClientPings.Inc()
+	p.factory.metricKnownClientPingsByIP.
+		WithLabelValues(evt.RemoteIP.String()).
+		Inc()
+	p.factory.metricDomainFrontingConnections.
+		WithLabelValues(info.tags[TagIPFamily]).
+		Inc()
+}
+
 func (p prometheusProcessor) EventIPListSize(evt mtglib.EventIPListSize) {
 	tag := TagIPListBlock
 	if !evt.IsBlockList {
@@ -173,6 +190,8 @@ type PrometheusFactory struct {
 	metricConnectionDuration   prometheus.Histogram
 	metricConcurrencyLimited   prometheus.Counter
 	metricReplayAttacks        prometheus.Counter
+	metricKnownClientPings     prometheus.Counter
+	metricKnownClientPingsByIP *prometheus.CounterVec
 }
 
 // Make builds a new observer.
@@ -278,6 +297,16 @@ func NewPrometheus(metricPrefix, httpPath string) *PrometheusFactory { //nolint:
 			Name:      MetricReplayAttacks,
 			Help:      "A number of detected replay attacks.",
 		}),
+		metricKnownClientPings: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: metricPrefix,
+			Name:      MetricKnownClientPings,
+			Help:      "A number of pings from previously authenticated clients.",
+		}),
+		metricKnownClientPingsByIP: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: metricPrefix,
+			Name:      MetricKnownClientPingsByIP,
+			Help:      "A number of known client pings grouped by client IP.",
+		}, []string{TagClientIP}),
 	}
 
 	registry.MustRegister(factory.metricClientConnections)
@@ -295,6 +324,8 @@ func NewPrometheus(metricPrefix, httpPath string) *PrometheusFactory { //nolint:
 	registry.MustRegister(factory.metricConnectionDuration)
 	registry.MustRegister(factory.metricConcurrencyLimited)
 	registry.MustRegister(factory.metricReplayAttacks)
+	registry.MustRegister(factory.metricKnownClientPings)
+	registry.MustRegister(factory.metricKnownClientPingsByIP)
 
 	return factory
 }

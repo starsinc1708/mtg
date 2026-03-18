@@ -156,4 +156,18 @@ const (
 	//
 	//     Type: histogram
 	MetricConnectionDuration = "connection_duration_seconds"
+
+	// MetricKnownClientPings defines a metric for pings from previously
+	// authenticated clients (e.g. Telegram app latency checks).
+	//
+	//     Type: counter
+	MetricKnownClientPings = "known_client_pings"
+
+	// MetricKnownClientPingsByIP defines a metric for known client pings
+	// grouped by client IP address.
+	//
+	//     Type: counter
+	//     Tags:
+	//       client_ip | IP address of the known client.
+	MetricKnownClientPingsByIP = "known_client_pings_by_ip"
 )

@@ -104,6 +104,8 @@ func eventStreamProcessor(ctx context.Context, eventChan <-chan mtglib.Event, ob
 				observer.EventReplayAttack(typedEvt)
 			case mtglib.EventIPListSize:
 				observer.EventIPListSize(typedEvt)
+			case mtglib.EventKnownClientPing:
+				observer.EventKnownClientPing(typedEvt)
 			}
 		}
 	}

@@ -213,3 +213,22 @@ func NewEventIPListSize(size int, isBlockList bool) EventIPListSize {
 		IsBlockList: isBlockList,
 	}
 }
+
+// EventKnownClientPing is emitted when a known (previously authenticated)
+// client connects without a valid secret — typically a Telegram app ping.
+type EventKnownClientPing struct {
+	eventBase
+
+	RemoteIP net.IP
+}
+
+// NewEventKnownClientPing creates a new EventKnownClientPing event.
+func NewEventKnownClientPing(streamID string, remoteIP net.IP) EventKnownClientPing {
+	return EventKnownClientPing{
+		eventBase: eventBase{
+			timestamp: time.Now(),
+			streamID:  streamID,
+		},
+		RemoteIP: remoteIP,
+	}
+}

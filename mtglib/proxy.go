@@ -43,6 +43,8 @@ type Proxy struct {
 	allowlist       IPBlocklist
 	eventStream     EventStream
 	logger          Logger
+
+	knownClients sync.Map // IP string -> time.Time (last successful auth)
 }
 
 // DomainFrontingAddress returns a host:port pair for a fronting domain.
@@ -100,6 +102,8 @@ func (p *Proxy) ServeConn(conn essentials.Conn) {
 		ctx.logger.WarningError("cannot dial to telegram", err)
 		return
 	}
+
+	p.knownClients.Store(ctx.ClientIP().String(), time.Now())
 
 	relay.Relay(
 		ctx,
@@ -269,7 +273,14 @@ func (p *Proxy) doTelegramCall(ctx *streamContext) error {
 }
 
 func (p *Proxy) doDomainFronting(ctx *streamContext, conn *connRewind) {
-	p.eventStream.Send(p.ctx, NewEventDomainFronting(ctx.streamID, ctx.ClientIP()))
+	clientIP := ctx.ClientIP()
+
+	if _, ok := p.knownClients.Load(clientIP.String()); ok {
+		p.eventStream.Send(p.ctx, NewEventKnownClientPing(ctx.streamID, clientIP))
+	} else {
+		p.eventStream.Send(p.ctx, NewEventDomainFronting(ctx.streamID, clientIP))
+	}
+
 	conn.Rewind()
 
 	nativeDialer := p.network.NativeDialer()
@@ -299,6 +310,28 @@ func (p *Proxy) doDomainFronting(ctx *streamContext, conn *connRewind) {
 		frontConn,
 		conn,
 	)
+}
+
+func (p *Proxy) cleanupKnownClients(ctx context.Context) {
+	ticker := time.NewTicker(10 * time.Minute)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			cutoff := time.Now().Add(-1 * time.Hour)
+
+			p.knownClients.Range(func(key, value any) bool {
+				if ts, ok := value.(time.Time); ok && ts.Before(cutoff) {
+					p.knownClients.Delete(key)
+				}
+
+				return true
+			})
+		}
+	}
 }
 
 // NewProxy makes a new proxy instance.
@@ -352,6 +385,8 @@ func NewProxy(opts ProxyOpts) (*Proxy, error) {
 	}
 
 	proxy.doppelGanger.Run()
+
+	go proxy.cleanupKnownClients(ctx)
 
 	if opts.AutoUpdate {
 		proxy.configUpdater.Run(ctx, dc.PublicConfigUpdateURLv4, "tcp4")

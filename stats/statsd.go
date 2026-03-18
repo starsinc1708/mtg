@@ -135,6 +135,20 @@ func (s statsdProcessor) EventIPListSize(evt mtglib.EventIPListSize) {
 	s.client.Gauge(MetricIPListSize, int64(evt.Size), statsd.StringTag(TagIPList, tag))
 }
 
+func (s statsdProcessor) EventKnownClientPing(evt mtglib.EventKnownClientPing) {
+	info, ok := s.streams[evt.StreamID()]
+	if !ok {
+		return
+	}
+
+	info.isDomainFronted = true
+
+	s.client.Incr(MetricKnownClientPings, 1)
+	s.client.GaugeDelta(MetricDomainFrontingConnections,
+		1,
+		info.T(TagIPFamily))
+}
+
 func (s statsdProcessor) Shutdown() {
 	events := make([]mtglib.EventFinish, 0, len(s.streams))
 
